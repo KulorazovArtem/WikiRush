@@ -16,7 +16,7 @@ class GameCreate(BaseModel):
     target_article: str
     max_steps: int = Field(default=100, ge=1, le=1000)
     time_limit: int = Field(default=300, ge=30, le=3600)  # От 30 секунд до 1 часа
-    max_players: int = Field(default=10, ge=2, le=50)
+    max_players: int = Field(default=10, ge=1, le=50)
 
 
 class GameUpdate(BaseModel):
