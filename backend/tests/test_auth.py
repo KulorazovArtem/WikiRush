@@ -2,7 +2,6 @@
 Tests for authentication
 """
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient
 
 
@@ -14,8 +13,8 @@ async def test_register_user(client: AsyncClient):
         json={
             "username": "newuser",
             "email": "newuser@example.com",
-            "password": "password123"
-        }
+            "password": "password123",
+        },
     )
 
     assert response.status_code == 201
@@ -33,8 +32,8 @@ async def test_register_duplicate_username(client: AsyncClient, test_user):
         json={
             "username": test_user.username,
             "email": "another@example.com",
-            "password": "password123"
-        }
+            "password": "password123",
+        },
     )
 
     assert response.status_code == 400
@@ -46,10 +45,7 @@ async def test_login_success(client: AsyncClient, test_user):
     """Test successful login"""
     response = await client.post(
         "/api/v1/auth/login",
-        json={
-            "username": test_user.username,
-            "password": "testpassword"
-        }
+        json={"username": test_user.username, "password": test_user.plain_password},
     )
 
     assert response.status_code == 200
@@ -64,10 +60,7 @@ async def test_login_invalid_credentials(client: AsyncClient, test_user):
     """Test login with invalid credentials"""
     response = await client.post(
         "/api/v1/auth/login",
-        json={
-            "username": test_user.username,
-            "password": "wrongpassword"
-        }
+        json={"username": test_user.username, "password": "wrongpassword"},
     )
 
     assert response.status_code == 401
@@ -76,10 +69,7 @@ async def test_login_invalid_credentials(client: AsyncClient, test_user):
 @pytest.mark.asyncio
 async def test_get_current_user(client: AsyncClient, auth_headers):
     """Test getting current user profile"""
-    response = await client.get(
-        "/api/v1/users/me",
-        headers=auth_headers
-    )
+    response = await client.get("/api/v1/users/me", headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()
