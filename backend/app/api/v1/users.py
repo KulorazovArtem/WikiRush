@@ -25,13 +25,12 @@ async def get_user(
 ):
     """Получение публичной информации о пользователе"""
     user = await auth_service.get_user_by_id(db, user_id)
-    
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
         )
-    
+
     return user
 
 
@@ -42,15 +41,16 @@ async def get_user_stats(
 ):
     """Получение статистики пользователя"""
     user = await auth_service.get_user_by_id(db, user_id)
-    
+
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
         )
-    
-    win_rate = (user.total_wins / user.total_games * 100) if user.total_games > 0 else 0.0
-    
+
+    win_rate = (
+        (user.total_wins / user.total_games * 100) if user.total_games > 0 else 0.0
+    )
+
     return UserStats(
         total_games=user.total_games,
         total_wins=user.total_wins,
@@ -58,5 +58,5 @@ async def get_user_stats(
         best_time=user.best_time,
         best_steps=user.best_steps,
         average_steps=None,  # TODO: calculate from game history
-        average_time=None,   # TODO: calculate from game history
+        average_time=None,  # TODO: calculate from game history
     )

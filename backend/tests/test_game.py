@@ -2,7 +2,6 @@
 Tests for game functionality
 """
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient
 
 
@@ -18,8 +17,8 @@ async def test_create_game(client: AsyncClient, auth_headers):
             "target_article": "Computer_science",
             "max_steps": 50,
             "time_limit": 300,
-            "max_players": 1
-        }
+            "max_players": 1,
+        },
     )
 
     # This might fail if Wikipedia API is not accessible

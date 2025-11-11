@@ -55,14 +55,14 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 @pytest_asyncio.fixture
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Create test client"""
+
     async def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
 
     async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test"
+        transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
         yield ac
 
@@ -98,10 +98,7 @@ async def auth_headers(client: AsyncClient, test_user: User) -> dict[str, str]:
     """Get authentication headers"""
     response = await client.post(
         "/api/v1/auth/login",
-        json={
-            "username": test_user.username,
-            "password": test_user.plain_password
-        }
+        json={"username": test_user.username, "password": test_user.plain_password},
     )
 
     assert response.status_code == 200, f"Login failed: {response.text}"

@@ -11,6 +11,7 @@ from app.core.config import settings
 
 class Base(DeclarativeBase):
     """Базовый класс для моделей"""
+
     pass
 
 
@@ -46,6 +47,6 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         # Импортируем все модели чтобы Base.metadata был заполнен
         from app.models import user, game, achievement  # noqa
-        
+
         # Создаем таблицы
         await conn.run_sync(Base.metadata.create_all)

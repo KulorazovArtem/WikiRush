@@ -1,9 +1,16 @@
 """
 Endpoints для игр
 """
-from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 
-from app.api.deps import CurrentUser, DBSession, get_current_user
+from app.api.deps import CurrentUser, DBSession
 from app.models.game import GameMode, GameStatus
 from app.schemas.game import (
     GameCreate,
@@ -39,14 +46,11 @@ async def create_game(
             time_limit=game_data.time_limit,
             max_players=game_data.max_players,
         )
-        
+
         return game
-    
+
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("", response_model=GameListResponse)
@@ -69,10 +73,7 @@ async def list_games(
     )
 
     games_public = [
-        GamePublic(
-            **game.__dict__,
-            participants_count=len(game.participants)
-        )
+        GamePublic(**game.__dict__, participants_count=len(game.participants))
         for game in games
     ]
 
@@ -94,7 +95,7 @@ async def get_random_articles():
     if not start_article:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Не удалось получить случайную начальную статью"
+            detail="Не удалось получить случайную начальную статью",
         )
 
     # Генерируем целевую статью, достижимую за 2-3 перехода
@@ -112,13 +113,13 @@ async def get_random_articles():
     if not target_article or target_article == start_article:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Не удалось найти достижимую целевую статью"
+            detail="Не удалось найти достижимую целевую статью",
         )
 
     return {
         "start_article": start_article,
         "target_article": target_article,
-        "min_steps": depth  # Минимальное количество шагов до цели
+        "min_steps": depth,  # Минимальное количество шагов до цели
     }
 
 
@@ -132,8 +133,7 @@ async def get_game(
 
     if not game:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Игра не найдена"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Игра не найдена"
         )
 
     return game
@@ -151,8 +151,7 @@ async def get_available_links(
 
     if not game:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Игра не найдена"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Игра не найдена"
         )
 
     # Находим участника
@@ -162,7 +161,7 @@ async def get_available_links(
     result = await db.execute(
         select(GameParticipant).where(
             GameParticipant.game_id == game_id,
-            GameParticipant.user_id == current_user.id
+            GameParticipant.user_id == current_user.id,
         )
     )
     participant = result.scalar_one_or_none()
@@ -170,7 +169,7 @@ async def get_available_links(
     if not participant:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Вы не участвуете в этой игре"
+            detail="Вы не участвуете в этой игре",
         )
 
     # Получаем текущую статью
@@ -183,7 +182,7 @@ async def get_available_links(
         "current_article": current_article,
         "target_article": game.target_article,
         "available_links": links,
-        "total_links": len(links)
+        "total_links": len(links),
     }
 
 
@@ -196,21 +195,18 @@ async def join_game(
     """Присоединение к игре"""
     try:
         participant = await game_service.join_game(db, game_id, current_user.id)
-        
+
         # Уведомляем других игроков
         await websocket_manager.notify_player_joined(game_id, current_user.username)
-        
+
         return GameJoinResponse(
             game_id=game_id,
             participant_id=participant.id,
-            message="Вы успешно присоединились к игре"
+            message="Вы успешно присоединились к игре",
         )
-    
+
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{game_id}/start")
@@ -221,32 +217,28 @@ async def start_game(
 ):
     """Запуск игры (только создатель)"""
     game = await game_service.get_game(db, game_id)
-    
+
     if not game:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Игра не найдена"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Игра не найдена"
         )
-    
+
     if game.creator_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Только создатель может запустить игру"
+            detail="Только создатель может запустить игру",
         )
-    
+
     try:
         game = await game_service.start_game(db, game_id)
-        
+
         # Уведомляем всех игроков
         await websocket_manager.notify_game_started(game_id)
-        
+
         return {"message": "Игра началась", "game_id": game_id}
-    
+
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{game_id}/move", response_model=GameMoveResponse)
@@ -264,7 +256,7 @@ async def make_move(
             user_id=current_user.id,
             article=move_data.article,
         )
-        
+
         # Уведомляем других игроков о ходе
         await websocket_manager.notify_player_move(
             game_id=game_id,
@@ -272,7 +264,7 @@ async def make_move(
             article=move_data.article,
             steps=participant.steps_count,
         )
-        
+
         # Если победа - уведомляем
         if is_winner:
             await websocket_manager.notify_player_won(
@@ -281,7 +273,7 @@ async def make_move(
                 time=participant.time_taken or 0,
                 steps=participant.steps_count,
             )
-        
+
         return GameMoveResponse(
             success=True,
             current_article=participant.current_article or "",
@@ -289,12 +281,9 @@ async def make_move(
             is_target_reached=is_winner,
             message="Победа! Вы достигли цели!" if is_winner else None,
         )
-    
+
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.websocket("/{game_id}/ws")
@@ -318,7 +307,7 @@ async def game_websocket(
         while True:
             # Просто держим соединение открытым
             # Все сообщения отправляются через websocket_manager
-            data = await websocket.receive_text()
+            _ = await websocket.receive_text()
 
             # Можно обрабатывать входящие сообщения от клиента
             # Например, ping/pong для keep-alive

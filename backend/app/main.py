@@ -18,9 +18,9 @@ async def lifespan(app: FastAPI):
     print("Starting up...")
     await init_db()
     print("Database initialized")
-    
+
     yield
-    
+
     # Shutdown
     print("Shutting down...")
 
@@ -51,7 +51,7 @@ async def root():
     return {
         "message": "WikiRush API",
         "version": settings.VERSION,
-        "docs": f"{settings.API_V1_STR}/docs"
+        "docs": f"{settings.API_V1_STR}/docs",
     }
 
 
@@ -63,9 +63,5 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
-    )
+
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

@@ -15,8 +15,7 @@ async def get_article_summary(title: str):
 
     if not article_info:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Статья '{title}' не найдена"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Статья '{title}' не найдена"
         )
 
     return {
@@ -34,14 +33,10 @@ async def get_article_links(title: str, limit: int = 50):
     if not links:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Статья '{title}' не найдена или не содержит ссылок"
+            detail=f"Статья '{title}' не найдена или не содержит ссылок",
         )
 
-    return {
-        "title": title,
-        "links": links,
-        "total": len(links)
-    }
+    return {"title": title, "links": links, "total": len(links)}
 
 
 @router.get("/search")
@@ -55,9 +50,9 @@ async def search_articles(query: str, limit: int = 10):
             {
                 "title": result.get("title"),
                 "snippet": result.get("snippet", ""),
-                "page_id": result.get("pageid")
+                "page_id": result.get("pageid"),
             }
             for result in results
         ],
-        "total": len(results)
+        "total": len(results),
     }

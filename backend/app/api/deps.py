@@ -18,7 +18,7 @@ security = HTTPBearer()
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    db: Annotated[AsyncSession, Depends(get_db)]
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """Получение текущего аутентифицированного пользователя"""
     credentials_exception = HTTPException(
@@ -26,33 +26,33 @@ async def get_current_user(
         detail="Не удалось проверить учетные данные",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         token = credentials.credentials
         payload = decode_token(token)
-        
+
         if payload.get("type") != "access":
             raise credentials_exception
-        
-        user_id: int = int(payload.get("sub"))
-        
-        if user_id is None:
+
+        sub = payload.get("sub")
+        if sub is None:
             raise credentials_exception
-    
+
+        user_id: int = int(sub)
+
     except (JWTError, ValueError):
         raise credentials_exception
-    
+
     user = await auth_service.get_user_by_id(db, user_id)
-    
+
     if user is None:
         raise credentials_exception
-    
+
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Неактивный пользователь"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Неактивный пользователь"
         )
-    
+
     return user
 
 
@@ -62,8 +62,7 @@ async def get_current_active_superuser(
     """Проверка что текущий пользователь - суперпользователь"""
     if not current_user.is_superuser:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Недостаточно прав"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав"
         )
     return current_user
 
